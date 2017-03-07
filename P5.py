@@ -340,15 +340,18 @@ def draw_labeled_bboxes(img, labels):
         # Define a bounding box based on min/max x and y
         bbox = ((np.min(nonzerox), np.min(nonzeroy)), (np.max(nonzerox), np.max(nonzeroy)))
         # Draw the box on the image
-        cv2.rectangle(img, bbox[0], bbox[1], (0,0,255), 6)
+        cv2.rectangle(img, bbox[0], bbox[1], (0,255,0), 6)
     # Return the image
     return img
     
 
-def process_frame(image, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins):
+def process_frame(image):
 
     ### Run sliding windows to detect cars using the classifier
-    
+
+    jpg_image = np.copy(image)
+    image = image.astype(np.float32)/255
+
     """
     windows = slide_window(image, x_start_stop=[None, None], y_start_stop=[None, None], xy_window=(128, 128), xy_overlap=(0.5, 0.5))
                            
@@ -360,13 +363,25 @@ def process_frame(image, ystart, ystop, scale, svc, X_scaler, orient, pix_per_ce
     heat = np.zeros_like(image[:,:,0]).astype(np.float)
 
     # Get windows with multiple scale search
-    windows_list = find_cars(image, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins)
+    windows_list=[]
+    for scale in scales:
+    	scale_windows_list = find_cars(image, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins)
+    	windows_list.extend(scale_windows_list)
+
+    # Combine windows from previous frames to remove false positives and smooth classifier output
+    previous_windows_list.append(windows_list)
+    if(len(previous_windows_list) > 6):
+        previous_windows_list.pop(0)
+
+    new_windows_list=[]
+    for w_list in previous_windows_list:
+        new_windows_list.extend(w_list)
 
     # Add heat maps to windows
-    heat = add_heat(heat,windows_list)
+    heat = add_heat(heat,new_windows_list)
         
     # Apply threshold to help remove false positives
-    heat = apply_threshold(heat,1)
+    heat = apply_threshold(heat,5)
 
     # Visualize the heatmap when displaying    
     heatmap = np.clip(heat, 0, 255)
@@ -374,13 +389,15 @@ def process_frame(image, ystart, ystop, scale, svc, X_scaler, orient, pix_per_ce
     # Find final boxes from heatmap using label function
     labels = label(heatmap)
 
-    # TODO: combine heatmaps from several frames to remove false positives
-
     # Draw labels
-    result = draw_labeled_bboxes(np.copy(image), labels)
+    result = draw_labeled_bboxes(jpg_image, labels)
 
+    """
     plt.imshow(result)
     mpimg.imsave('result', result)
+    """
+
+    return result
 
 
 if __name__ == "__main__":
@@ -413,6 +430,23 @@ if __name__ == "__main__":
 
     ### Extract color and HOG features for training car detection classifier
     print('Extracting features for training')
+    global color_space
+    global orient
+    global pix_per_cell
+    global cell_per_block
+    global hog_channel
+    global spatial_size
+    global hist_bins
+    global spatial_feat
+    global hist_feat
+    global hog_feat
+    global y_start_stop
+    global ystart
+    global ystop
+    global scales
+    global svc
+    global previous_windows_list
+
     color_space = 'YCrCb' # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
     orient = 9  # HOG orientations
     pix_per_cell = 8 # HOG pixels per cell
@@ -424,9 +458,10 @@ if __name__ == "__main__":
     hist_feat = True # Histogram features on or off
     hog_feat = True # HOG features on or off
     y_start_stop = [None, None] # Min and max in y to search in slide_window()
-    ystart = 400
-    ystop = 656
-    scale = 1.5  # Scale parameter for multiple-scaled search windows
+    ystart = 380
+    ystop = 680
+    scales = [1.0, 1.5, 2.0]  # Scale parameter for multiple-scaled search windows
+    previous_windows_list = []
 
     car_features = extract_features(cars, color_space=color_space, 
                             spatial_size=spatial_size, hist_bins=hist_bins, 
@@ -501,22 +536,24 @@ if __name__ == "__main__":
 
     ### Process test frame images
     
+    """
     print('Processing test image')
     img_path = 'test_images/test1.jpg'
     image = mpimg.imread(img_path)
     # Uncomment the following line if you extracted training
     # data from .png images (scaled 0 to 1 by mpimg) and the
     # image you are searching is a .jpg (scaled 0 to 255)
-    image = image.astype(np.float32)/255
-    process_frame(image, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins)
+    process_frame(image)
+    """
 
     ### Process test videos
-    """
-    output = 'output.mp4'
-    clip1 = VideoFileClip("project_video.mp4")
-    output_clip = clip1.fl_image(process_frame) #NOTE: this function expects color images!!
+
+    print('Processing test video')
+    output = 'output_test.mp4'
+    clip1 = VideoFileClip("test_video.mp4")
+    output_clip = clip1.fl_image( process_frame )
     output_clip.write_videofile(output, audio=False)
-    """
+    
 
     #input()
 
