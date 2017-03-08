@@ -370,7 +370,7 @@ def process_frame(image):
 
     # Combine windows from previous frames to remove false positives and smooth classifier output
     previous_windows_list.append(windows_list)
-    if(len(previous_windows_list) > 6):
+    if(len(previous_windows_list) > 10):
         previous_windows_list.pop(0)
 
     new_windows_list=[]
@@ -381,7 +381,7 @@ def process_frame(image):
     heat = add_heat(heat,new_windows_list)
         
     # Apply threshold to help remove false positives
-    heat = apply_threshold(heat,5)
+    heat = apply_threshold(heat,8)
 
     # Visualize the heatmap when displaying    
     heatmap = np.clip(heat, 0, 255)
@@ -538,7 +538,7 @@ if __name__ == "__main__":
     
     """
     print('Processing test image')
-    img_path = 'test_images/test1.jpg'
+    img_path = 'test_images/test3.jpg'
     image = mpimg.imread(img_path)
     # Uncomment the following line if you extracted training
     # data from .png images (scaled 0 to 1 by mpimg) and the
@@ -547,13 +547,15 @@ if __name__ == "__main__":
     """
 
     ### Process test videos
-
-    print('Processing test video')
-    output = 'output_test.mp4'
-    clip1 = VideoFileClip("test_video.mp4")
+    
+    
+    print('Processing video')
+    output = 'output.mp4'
+    clip1 = VideoFileClip("project_video.mp4")
     output_clip = clip1.fl_image( process_frame )
     output_clip.write_videofile(output, audio=False)
     
+
 
     #input()
 
