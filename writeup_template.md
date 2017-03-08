@@ -17,10 +17,10 @@ The goals / steps of this project are the following:
 [//]: # (Image References)
 [image1]: ./output_images/car_not_car.png
 [image2]: ./output_images/not_car.png
-[image3]: ./output_images/HOG.jpg
-[image4]: ./output_images/windows.jpg
-[image5]: ./output_images/result_1.jpg
-[image6]: ./output_images/result_3.jpg
+[image3]: ./output_images/HOG.png
+[image4]: ./output_images/windows.png
+[image5]: ./output_images/result_1.png
+[image6]: ./output_images/result_3.png
 [video1]: ./output_1.mp4
 [video2]: ./output_2.mp4
 [video3]: ./output.mp4
